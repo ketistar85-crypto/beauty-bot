@@ -36,6 +36,8 @@ def webhook():
             send_message(chat_id, f"✅ Ты написал: {text}")
         else:
             print("❌ Не найден chat_id в сообщении")
+    else:
+        print("⚠️ Неизвестный тип вебхука или нет поля update_type")
     
     return '', 200
 
