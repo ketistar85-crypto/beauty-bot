@@ -3,6 +3,7 @@ import sys
 import requests
 from flask import Flask, request
 import logging
+import time
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,7 +17,7 @@ BASE_URL = "https://platform-api.max.ru"
 
 app = Flask(__name__)
 
-def send_message(chat_id, text, user_id=None):
+def send_message(chat_id, text, recipient_user_id=None):
     """Отправка сообщения через API MAX"""
     if not TOKEN:
         logging.error("Токен не найден!")
@@ -28,17 +29,25 @@ def send_message(chat_id, text, user_id=None):
         "Content-Type": "application/json"
     }
     
-    # Пробуем добавить recipient как в вебхуке
+    # Полная структура как в вебхуке
     data = {
         "recipient": {
             "chat_id": chat_id,
-            "chat_type": "dialog"
+            "chat_type": "dialog",
+            "user_id": recipient_user_id if recipient_user_id else 313227351  # из вебхука
         },
-        "body": {"text": text}
+        "body": {
+            "text": text,
+            "mid": f"mid.{int(time.time() * 1000)}",
+            "seq": int(time.time() * 1000000)
+        },
+        "sender": {
+            "is_bot": True
+        },
+        "timestamp": int(time.time() * 1000)
     }
     
     logging.info(f"Отправка в чат {chat_id}: {text}")
-    logging.info(f"URL: {url}")
     logging.info(f"Данные: {data}")
     
     try:
@@ -84,14 +93,12 @@ def webhook():
         if chat_id and text:
             result = send_message(chat_id, f"✅ Ты написал: {text}", user_id)
             logging.info(f"Результат: {'Успешно' if result else 'Ошибка'}")
-        else:
-            logging.error(f"Нет данных: chat_id={chat_id}, text={text}")
     
     elif update_type == 'bot_started':
         chat_id = update.get('chat_id')
         user_id = update.get('user_id')
         if chat_id:
-            send_message(chat_id, "👋 Привет! Я бот. Напиши мне что-нибудь!")
+            send_message(chat_id, "👋 Привет! Я бот. Напиши мне что-нибудь!", user_id)
     
     return '', 200
 
