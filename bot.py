@@ -8,8 +8,7 @@ BASE_URL = "https://platform-api.max.ru"
 app = Flask(__name__)
 
 def send_message(chat_id, text):
-    """Отправка сообщения через API MAX"""
-    # chat_id передаётся в query-параметре
+    """Отправка сообщения через API MAX (с chat_id в query-параметре)"""
     url = f"{BASE_URL}/messages?chat_id={chat_id}"
     headers = {"Authorization": TOKEN, "Content-Type": "application/json"}
     data = {"body": {"text": text}}
@@ -19,7 +18,7 @@ def send_message(chat_id, text):
         print(f"📤 Ответ MAX: {r.status_code} - {r.text}")
         return r.status_code == 200
     except Exception as e:
-        print(f"Ошибка отправки: {e}")
+        print(f"❌ Ошибка отправки: {e}")
         return False
 
 @app.route('/webhook', methods=['POST'])
@@ -33,9 +32,11 @@ def webhook():
         text = msg.get('body', {}).get('text', '')
         
         if chat_id:
+            print(f"📤 Пытаюсь отправить ответ на chat_id={chat_id}")
             send_message(chat_id, f"✅ Ты написал: {text}")
+        else:
+            print("❌ Не найден chat_id в сообщении")
     
-    # Возвращаем ПУСТОЙ ответ с кодом 200
     return '', 200
 
 @app.route('/')
