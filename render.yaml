@@ -4,6 +4,8 @@ services:
     runtime: python
     repo: https://github.com/ketistar85-crypto/beauty-bot
     plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
     envVars:
       - key: TOKEN
         value: f9LHodD0cOJYH8sP72m2pFJE_o24qmn2XStQ0cbFAhOO_6xjZ0bR3H-whqxJYNT8tEGc6o8YfnIQC06tYyRM
