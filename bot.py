@@ -210,6 +210,7 @@ def webhook():
             send_message(chat_id, f"🌸 Добро пожаловать в {salon['name']}!\n\nТариф: {salon['plan']}", salon_token)
         else:
             send_message(chat_id, f"✅ Вы написали: {text}", salon_token)
+            logging.info(f"Ответ на сообщение: {text}")
     
     return '', 200
 
