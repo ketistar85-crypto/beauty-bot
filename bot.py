@@ -18,18 +18,25 @@ def send_message(chat_id, text, buttons=None):
     data = {"text": text}
     
     if buttons:
-        data["keyboard"] = {
-            "buttons": buttons
-        }
+        data["attachments"] = [
+            {
+                "type": "inline_keyboard",
+                "payload": {
+                    "buttons": buttons
+                }
+            }
+        ]
     
     r = requests.post(url, json=data, headers=headers)
-    logging.info(f"Ответ: {r.status_code}")
+    logging.info(f"Ответ: {r.status_code} - {r.text}")
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     update = request.json
     if not update:
         return '', 200
+    
+    logging.info(f"Вебхук: {update}")
     
     if update.get('update_type') == 'message_created':
         msg = update.get('message', {})
@@ -38,8 +45,13 @@ def webhook():
         
         if text == '/start':
             buttons = [
-                [{"text": "📅 Записаться", "callback_data": "booking"}],
-                [{"text": "📋 Мои записи", "callback_data": "my_appointments"}]
+                [
+                    {"text": "📅 Записаться", "callback_data": "booking"},
+                    {"text": "📋 Мои записи", "callback_data": "my_appointments"}
+                ],
+                [
+                    {"text": "❌ Отменить запись", "callback_data": "cancel"}
+                ]
             ]
             send_message(chat_id, "🌸 Добро пожаловать! Выберите действие:", buttons)
         else:
@@ -53,11 +65,13 @@ def webhook():
         logging.info(f"Нажата кнопка: {callback_data}")
         
         if callback_data == 'booking':
-            send_message(chat_id, "📅 Здесь будет запись")
+            send_message(chat_id, "📅 Здесь будет запись к мастеру")
         elif callback_data == 'my_appointments':
             send_message(chat_id, "📋 У вас пока нет записей")
+        elif callback_data == 'cancel':
+            send_message(chat_id, "❌ У вас нет активных записей для отмены")
         
-        # Ответ на callback
+        # Обязательно отвечаем на callback
         callback_url = f"{BASE_URL}/callbacks"
         callback_headers = {"Authorization": TOKEN, "Content-Type": "application/json"}
         requests.post(callback_url, json={"id": update.get('id')}, headers=callback_headers)
@@ -69,4 +83,5 @@ def index():
     return "Bot is running!"
 
 if __name__ == '__main__':
+    logging.info("🚀 Бот запущен!")
     app.run(host='0.0.0.0', port=8080)
