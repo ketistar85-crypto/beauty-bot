@@ -22,14 +22,15 @@ def send_message(chat_id, text):
         logging.error("Токен не найден!")
         return False
         
-    # chat_id в теле запроса, не в URL
-    url = f"{BASE_URL}/messages"
+    # chat_id в query-параметре (как сказала поддержка)
+    url = f"{BASE_URL}/messages?chat_id={chat_id}"
     headers = {
         "Authorization": TOKEN, 
         "Content-Type": "application/json"
     }
+    
+    # В теле только body
     data = {
-        "chat_id": chat_id,
         "body": {"text": text}
     }
     
@@ -66,29 +67,22 @@ def webhook():
         return '', 200
     
     if not update:
-        logging.warning("Пустой вебхук")
         return '', 200
         
     update_type = update.get('update_type')
-    logging.info(f"Тип обновления: {update_type}")
     
     if update_type == 'message_created':
         msg = update.get('message', {})
         chat_id = msg.get('recipient', {}).get('chat_id')
         text = msg.get('body', {}).get('text', '')
         
-        logging.info(f"chat_id: {chat_id}")
-        logging.info(f"text: {text}")
+        logging.info(f"chat_id: {chat_id}, text: {text}")
         
         if chat_id and text:
             result = send_message(chat_id, f"✅ Ты написал: {text}")
-            logging.info(f"Результат отправки: {'Успешно' if result else 'Ошибка'}")
-        elif not chat_id:
-            logging.error("chat_id не найден!")
-        elif not text:
-            logging.warning("Текст сообщения пустой")
-    else:
-        logging.info(f"Пропускаем обновление типа: {update_type}")
+            logging.info(f"Результат: {'Успешно' if result else 'Ошибка'}")
+        else:
+            logging.error(f"Нет данных: chat_id={chat_id}, text={text}")
     
     return '', 200
 
@@ -96,8 +90,7 @@ def webhook():
 def test():
     return {
         "status": "running",
-        "token_exists": bool(TOKEN),
-        "base_url": BASE_URL
+        "token_exists": bool(TOKEN)
     }
 
 @app.route('/')
@@ -105,8 +98,5 @@ def index():
     return "Bot is running!"
 
 if __name__ == '__main__':
-    logging.info("=" * 50)
     logging.info("ЗАПУСК БОТА")
-    logging.info(f"Токен установлен: {bool(TOKEN)}")
-    logging.info("=" * 50)
     app.run(host='0.0.0.0', port=8080)
