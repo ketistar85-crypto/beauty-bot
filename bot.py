@@ -4,7 +4,6 @@ import requests
 from flask import Flask, request
 import logging
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -23,14 +22,20 @@ def send_message(chat_id, text):
         logging.error("Токен не найден!")
         return False
         
-    url = f"{BASE_URL}/messages?chat_id={chat_id}"
+    # chat_id в теле запроса, не в URL
+    url = f"{BASE_URL}/messages"
     headers = {
-        "Authorization": TOKEN,
+        "Authorization": TOKEN, 
         "Content-Type": "application/json"
     }
-    data = {"body": {"text": text}}
+    data = {
+        "chat_id": chat_id,
+        "body": {"text": text}
+    }
     
     logging.info(f"Отправка в чат {chat_id}: {text}")
+    logging.info(f"URL: {url}")
+    logging.info(f"Данные: {data}")
     
     try:
         r = requests.post(url, json=data, headers=headers, timeout=10)
@@ -60,7 +65,6 @@ def webhook():
         logging.error(f"Ошибка парсинга JSON: {e}")
         return '', 200
     
-    # Проверяем структуру
     if not update:
         logging.warning("Пустой вебхук")
         return '', 200
@@ -90,7 +94,6 @@ def webhook():
 
 @app.route('/test', methods=['GET'])
 def test():
-    """Проверка работоспособности"""
     return {
         "status": "running",
         "token_exists": bool(TOKEN),
@@ -105,6 +108,5 @@ if __name__ == '__main__':
     logging.info("=" * 50)
     logging.info("ЗАПУСК БОТА")
     logging.info(f"Токен установлен: {bool(TOKEN)}")
-    logging.info(f"Базовый URL: {BASE_URL}")
     logging.info("=" * 50)
     app.run(host='0.0.0.0', port=8080)
