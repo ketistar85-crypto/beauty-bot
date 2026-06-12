@@ -29,25 +29,29 @@ def send_message(chat_id, text, recipient_user_id=None):
         "Content-Type": "application/json"
     }
     
+    # Генерируем уникальный mid и seq
+    timestamp_ms = int(time.time() * 1000)
+    
     # Полная структура как в вебхуке
     data = {
         "recipient": {
             "chat_id": chat_id,
             "chat_type": "dialog",
-            "user_id": recipient_user_id if recipient_user_id else 313227351  # из вебхука
+            "user_id": recipient_user_id
         },
         "body": {
             "text": text,
-            "mid": f"mid.{int(time.time() * 1000)}",
-            "seq": int(time.time() * 1000000)
+            "mid": f"mid.{timestamp_ms}",
+            "seq": timestamp_ms
         },
         "sender": {
             "is_bot": True
         },
-        "timestamp": int(time.time() * 1000)
+        "timestamp": timestamp_ms
     }
     
-    logging.info(f"Отправка в чат {chat_id}: {text}")
+    logging.info(f"ОТПРАВКА v3")
+    logging.info(f"URL: {url}")
     logging.info(f"Данные: {data}")
     
     try:
@@ -61,6 +65,8 @@ def send_message(chat_id, text, recipient_user_id=None):
             except:
                 pass
             return False
+        
+        logging.info("✅ Сообщение отправлено успешно!")
         return True
     except Exception as e:
         logging.error(f"Ошибка отправки: {e}")
@@ -73,6 +79,7 @@ def webhook():
     
     try:
         update = request.json
+        logging.info(f"Данные: {update}")
     except Exception as e:
         logging.error(f"Ошибка парсинга JSON: {e}")
         return '', 200
@@ -88,15 +95,16 @@ def webhook():
         user_id = msg.get('recipient', {}).get('user_id')
         text = msg.get('body', {}).get('text', '')
         
-        logging.info(f"chat_id: {chat_id}, text: {text}")
+        logging.info(f"chat_id: {chat_id}, user_id: {user_id}, text: {text}")
         
         if chat_id and text:
             result = send_message(chat_id, f"✅ Ты написал: {text}", user_id)
-            logging.info(f"Результат: {'Успешно' if result else 'Ошибка'}")
+            logging.info(f"Результат: {'✅ Успешно' if result else '❌ Ошибка'}")
     
     elif update_type == 'bot_started':
         chat_id = update.get('chat_id')
         user_id = update.get('user_id')
+        logging.info(f"bot_started: chat_id={chat_id}")
         if chat_id:
             send_message(chat_id, "👋 Привет! Я бот. Напиши мне что-нибудь!", user_id)
     
@@ -106,13 +114,14 @@ def webhook():
 def test():
     return {
         "status": "running",
-        "token_exists": bool(TOKEN)
+        "token_exists": bool(TOKEN),
+        "version": "v3"
     }
 
 @app.route('/')
 def index():
-    return "Bot is running!"
+    return "Bot is running! v3"
 
 if __name__ == '__main__':
-    logging.info("ЗАПУСК БОТА")
+    logging.info("ЗАПУСК БОТА v3")
     app.run(host='0.0.0.0', port=8080)
