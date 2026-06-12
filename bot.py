@@ -16,21 +16,24 @@ BASE_URL = "https://platform-api.max.ru"
 
 app = Flask(__name__)
 
-def send_message(chat_id, text):
+def send_message(chat_id, text, user_id=None):
     """Отправка сообщения через API MAX"""
     if not TOKEN:
         logging.error("Токен не найден!")
         return False
         
-    # chat_id в query-параметре (как сказала поддержка)
     url = f"{BASE_URL}/messages?chat_id={chat_id}"
     headers = {
         "Authorization": TOKEN, 
         "Content-Type": "application/json"
     }
     
-    # В теле только body
+    # Пробуем добавить recipient как в вебхуке
     data = {
+        "recipient": {
+            "chat_id": chat_id,
+            "chat_type": "dialog"
+        },
         "body": {"text": text}
     }
     
@@ -61,7 +64,6 @@ def webhook():
     
     try:
         update = request.json
-        logging.info(f"Структура вебхука: {update}")
     except Exception as e:
         logging.error(f"Ошибка парсинга JSON: {e}")
         return '', 200
@@ -74,15 +76,22 @@ def webhook():
     if update_type == 'message_created':
         msg = update.get('message', {})
         chat_id = msg.get('recipient', {}).get('chat_id')
+        user_id = msg.get('recipient', {}).get('user_id')
         text = msg.get('body', {}).get('text', '')
         
         logging.info(f"chat_id: {chat_id}, text: {text}")
         
         if chat_id and text:
-            result = send_message(chat_id, f"✅ Ты написал: {text}")
+            result = send_message(chat_id, f"✅ Ты написал: {text}", user_id)
             logging.info(f"Результат: {'Успешно' if result else 'Ошибка'}")
         else:
             logging.error(f"Нет данных: chat_id={chat_id}, text={text}")
+    
+    elif update_type == 'bot_started':
+        chat_id = update.get('chat_id')
+        user_id = update.get('user_id')
+        if chat_id:
+            send_message(chat_id, "👋 Привет! Я бот. Напиши мне что-нибудь!")
     
     return '', 200
 
