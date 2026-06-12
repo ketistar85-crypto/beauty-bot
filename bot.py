@@ -10,7 +10,7 @@ from datetime import datetime, date
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-TOKEN = os.environ.get("TOKEN")
+TOKEN = TOKEN = "f9LHodD0cOJYH8sP72m2pFJE_o24qmn2XStQ0cbFAhOO_6xjZ0bR3H-whqxJYNT8tEGc6o8YfnIQC06tYyRM"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not TOKEN:
