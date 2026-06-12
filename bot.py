@@ -12,6 +12,7 @@ BASE_URL = "https://platform-api.max.ru"
 app = Flask(__name__)
 
 def send_message(chat_id, text, buttons=None):
+    """Отправка сообщения с inline-кнопками (по документации MAX)"""
     url = f"{BASE_URL}/messages?chat_id={chat_id}"
     headers = {"Authorization": TOKEN, "Content-Type": "application/json"}
     
@@ -38,6 +39,7 @@ def webhook():
     
     logging.info(f"Вебхук: {update}")
     
+    # Обработка текстовых сообщений
     if update.get('update_type') == 'message_created':
         msg = update.get('message', {})
         chat_id = msg.get('recipient', {}).get('chat_id')
@@ -46,17 +48,18 @@ def webhook():
         if text == '/start':
             buttons = [
                 [
-                    {"text": "📅 Записаться", "callback_data": "booking"},
-                    {"text": "📋 Мои записи", "callback_data": "my_appointments"}
+                    {"type": "callback", "text": "📅 Записаться", "callback_data": "booking"},
+                    {"type": "callback", "text": "📋 Мои записи", "callback_data": "my_appointments"}
                 ],
                 [
-                    {"text": "❌ Отменить запись", "callback_data": "cancel"}
+                    {"type": "callback", "text": "❌ Отменить запись", "callback_data": "cancel"}
                 ]
             ]
             send_message(chat_id, "🌸 Добро пожаловать! Выберите действие:", buttons)
         else:
             send_message(chat_id, f"✅ Ты написал: {text}")
     
+    # Обработка нажатий на кнопки
     elif update.get('update_type') == 'callback_query':
         data = update.get('data', {})
         chat_id = data.get('chat_id')
@@ -65,13 +68,13 @@ def webhook():
         logging.info(f"Нажата кнопка: {callback_data}")
         
         if callback_data == 'booking':
-            send_message(chat_id, "📅 Здесь будет запись к мастеру")
+            send_message(chat_id, "📅 Здесь будет форма записи к мастеру")
         elif callback_data == 'my_appointments':
             send_message(chat_id, "📋 У вас пока нет записей")
         elif callback_data == 'cancel':
             send_message(chat_id, "❌ У вас нет активных записей для отмены")
         
-        # Обязательно отвечаем на callback
+        # Обязательный ответ на callback
         callback_url = f"{BASE_URL}/callbacks"
         callback_headers = {"Authorization": TOKEN, "Content-Type": "application/json"}
         requests.post(callback_url, json={"id": update.get('id')}, headers=callback_headers)
